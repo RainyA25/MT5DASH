@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MT5 Bot Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header>
+    <h1>Trading Bot Dashboard</h1>
+  </header>
+
+  <section id="account">
+    <h2>Account Summary</h2>
+    <div id="account-data">
+      <!-- rendered by script.js -->
+    </div>
+  </section>
+
+  <section id="trades">
+    <h2>Open Trades</h2>
+    <table id="trades-table">
+      <thead>
+        <tr>
+          <th data-sort="symbol">Symbol</th>
+          <th data-sort="open_time">Open Time</th>
+          <th data-sort="volume">Volume</th>
+          <th>Prices</th>
+          <th data-sort="profit_usd">Profit (USD)</th>
+          <th data-sort="profit_pct">Profit (%)</th>
+        </tr>
+      </thead>
+      <tbody id="trades-body"></tbody>
+    </table>
+  </section>
+  <section id="chart">
+    <h2>Equity & Balance Chart</h2>
+    <div class="chart-controls">
+      <button data-range="all">All Time</button>
+      <button data-range="7d">7 Days</button>
+      <button data-range="1d">1 Day</button>
+      <button data-range="1h">1 Hour</button>
+    </div>
+    <canvas id="equityChart"></canvas>
+  </section>
+  <section id="history">
+    <h2>Trade History</h2>
+    <table id="history-table">
+      <thead>
+        <tr>
+          <th data-sort="symbol">Symbol</th>
+          <th data-sort="open_time">Open Time</th>
+          <th data-sort="close_time">Close Time</th>
+          <th data-sort="volume">Volume</th>
+          <th data-sort="profit_usd">Profit (USD)</th>
+        </tr>
+      </thead>
+      <tbody id="history-body"></tbody>
+    </table>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
