@@ -20,7 +20,7 @@ async function loadSummary() {
   const data = await fetchJSON(`${API_BASE}/summary`);
   document.getElementById("balance").innerHTML = formatCurrency(data.balance);
   document.getElementById("equity").innerHTML = formatCurrency(data.equity);
-  document.getElementById("unrealized_pnl").innerHTML = colorize(data.unrealized_pnl_pct.toFixed(2) + "%");
+  document.getElementById("unrealized_pnl").innerHTML = colorize(data.unrealized_pct.toFixed(2) + "%");
   document.getElementById("margin_free").innerHTML = formatCurrency(data.margin_free);
   document.getElementById("margin").innerHTML = formatCurrency(data.margin);
 }
