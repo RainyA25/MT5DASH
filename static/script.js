@@ -75,7 +75,9 @@ function renderEquityChart(data) {
   const labels = data.map(d => d.timestamp);
   const pnl = data.map(d => d.daily_pnl);
 
-  if (window.equityChart) window.equityChart.destroy();
+  if (window.equityChart instanceof Chart) {
+    window.equityChart.destroy();
+  }
 
   window.equityChart = new Chart(ctx, {
     type: "line",
@@ -98,13 +100,8 @@ function renderEquityChart(data) {
         }
       },
       scales: {
-        x: {
-          ticks: { color: "#ccc" }
-        },
-        y: {
-          ticks: { color: "#ccc" },
-          beginAtZero: false
-        }
+        x: { ticks: { color: "#ccc" }},
+        y: { ticks: { color: "#ccc" }, beginAtZero: false }
       }
     }
   });
