@@ -1,0 +1,94 @@
+:root {
+  --bg: rgb(24,31,31);
+  --fg: rgb(209,218,217);
+  --grid: rgb(50,63,63);
+  --bull: rgb(52,186,52);
+  --bear: firebrick;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0; padding: 1rem;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: sans-serif;
+}
+
+header h1 {
+  border-bottom: 1px solid var(--grid);
+  padding-bottom: .5rem;
+}
+
+section {
+  margin-top: 1.5rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--grid);
+  padding-bottom: .25rem;
+}
+
+#account-data {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+  gap: .5rem;
+  background: var(--grid);
+  padding: .5rem;
+  border-radius: 4px;
+}
+
+#account-data div {
+  background: var(--bg);
+  padding: .5rem;
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--grid);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: .5rem;
+  border-bottom: 1px solid var(--bg);
+}
+
+th[data-sort] {
+  cursor: pointer;
+}
+
+tbody tr:nth-child(even) {
+  background: var(--bg);
+}
+
+.profit-positive {
+  color: var(--bull);
+}
+
+.profit-negative {
+  color: var(--bear);
+}
+.chart-controls {
+  margin-bottom: 0.5rem;
+}
+.chart-controls button {
+  background: var(--grid);
+  color: var(--fg);
+  border: 1px solid var(--bg);
+  margin-right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+canvas {
+  max-width: 100%;
+  background: #1b1b1b;
+  border-radius: 6px;
+  padding: 0.5rem;
+}
