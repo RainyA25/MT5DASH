@@ -1,130 +1,100 @@
-const TRADES_URL = '/api/trades';
-const CHART_URL  = '/api/chart';
+// Updated script.js for new endpoints
 
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(res.statusText);
-  return res.json();
+const API_BASE = "https://mt5bot.tilinshop.com";
+
+async function fetchJSON(endpoint) {
+  const res = await fetch(`${API_BASE}${endpoint}`);
+  if (!res.ok) throw new Error(`Failed to fetch ${endpoint}`);
+  return await res.json();
 }
 
-function formatTimeISO(ts) {
-  if (!ts || ts === "-") return "-";
-  return new Date(ts).toLocaleString();
+function updateSummary(data) {
+  document.getElementById("balance").innerText = `$${data.balance}`;
+  document.getElementById("equity").innerText = `$${data.equity}`;
+  document.getElementById("unrealized_pnl").innerText = `${data.unrealized_pct.toFixed(2)}%`;
+  document.getElementById("margin_free").innerText = `$${data.margin_free}`;
+  document.getElementById("margin").innerText = `$${data.margin}`;
 }
 
-// --- Trade Tables ---
-function renderTrades(trades, isOpen) {
-  const tbody = document.getElementById(isOpen ? 'trades-body' : 'history-body');
-  tbody.innerHTML = '';
-
+function updateTrades(trades) {
+  const container = document.getElementById("trades");
+  container.innerHTML = "";
   trades.forEach(t => {
-    const profit = parseFloat(t.pnl);
-    const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
-    const tr = document.createElement('tr');
-
-    tr.innerHTML = isOpen ? `
-      <td>${t.symbol}</td>
-      <td>${formatTimeISO(t.date_opened)}</td>
-      <td>${t.type}</td>
-      <td>${parseFloat(t.volume).toFixed(3)}</td>
-      <td>${t.price_opened} → ${t.price_closed}</td>
-      <td class="${profitClass}">${profit.toFixed(2)}</td>
-    ` : `
-      <td>${t.symbol}</td>
-      <td>${formatTimeISO(t.date_opened)}</td>
-      <td>${formatTimeISO(t.date_closed)}</td>
-      <td>${t.type}</td>
-      <td>${parseFloat(t.volume).toFixed(3)}</td>
-      <td class="${profitClass}">${profit.toFixed(2)}</td>
-    `;
-
-    tbody.appendChild(tr);
+    container.innerHTML += `
+      <tr>
+        <td>${t.symbol}</td>
+        <td>${t.type}</td>
+        <td>${t.volume}</td>
+        <td>${t.open_price}</td>
+        <td>${t.close_price}</td>
+        <td>${t.open_time}</td>
+        <td>${t.duration}</td>
+        <td>${t.profit_usd}</td>
+        <td>${t.profit_pct}%</td>
+      </tr>`;
   });
 }
 
-// --- Chart Setup ---
-let equityChart;
+function updateHistory(history) {
+  const container = document.getElementById("history");
+  container.innerHTML = "";
+  history.forEach(t => {
+    container.innerHTML += `
+      <tr>
+        <td>${t.symbol}</td>
+        <td>${t.entry_type}</td>
+        <td>${t.volume}</td>
+        <td>${t.open_price}</td>
+        <td>${t.close_price}</td>
+        <td>${t.open_time}</td>
+        <td>${t.close_time}</td>
+        <td>${t.duration}</td>
+        <td>${t.profit_usd}</td>
+      </tr>`;
+  });
+}
 
-function renderChart(data) {
-  const ctx = document.getElementById('equityChart').getContext('2d');
+function renderEquityChart(data) {
+  const labels = data.map(d => d.timestamp);
+  const pnl = data.map(d => d.daily_pnl);
 
-  const timestamps = data.map(d => new Date(d.timestamp).toLocaleString());
-  const equity = data.map(d => d.equity);
-  const balance = data.map(d => d.balance);
-  const maxLoss = data.map(d => d.max_loss_threshold);
-  const dailyLoss = data.map(d => d.daily_loss_threshold);
-
-  if (equityChart) equityChart.destroy();
-
-  equityChart = new Chart(ctx, {
-    type: 'line',
+  const ctx = document.getElementById("equityChart").getContext("2d");
+  new Chart(ctx, {
+    type: "line",
     data: {
-      labels: timestamps,
-      datasets: [
-        { label: 'Equity', data: equity, borderColor: 'lime', borderWidth: 2 },
-        { label: 'Balance', data: balance, borderColor: 'cyan', borderWidth: 2 },
-        { label: 'Max Loss', data: maxLoss, borderColor: 'red', borderWidth: 1, borderDash: [5, 5] },
-        { label: 'Daily Loss', data: dailyLoss, borderColor: 'orange', borderWidth: 1, borderDash: [5, 5] },
-      ]
+      labels,
+      datasets: [{
+        label: "Daily PnL ($)",
+        data: pnl,
+        fill: false,
+        borderWidth: 2
+      }]
     },
     options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: '#fff' } },
-        tooltip: { mode: 'index', intersect: false }
-      },
       scales: {
-        x: { ticks: { color: '#aaa' } },
-        y: { ticks: { color: '#aaa' }, beginAtZero: false }
+        x: { title: { display: true, text: "Date" } },
+        y: { title: { display: true, text: "PnL ($)" } }
       }
     }
   });
 }
 
-function filterChartData(data, range) {
-  const now = Date.now();
-  let cutoff;
-
-  switch (range) {
-    case '1h': cutoff = now - 1 * 60 * 60 * 1000; break;
-    case '1d': cutoff = now - 24 * 60 * 60 * 1000; break;
-    case '7d': cutoff = now - 7 * 24 * 60 * 60 * 1000; break;
-    default: return data;
-  }
-
-  return data.filter(d => new Date(d.timestamp).getTime() >= cutoff);
-}
-
-function setupChartControls(chartData) {
-  document.querySelectorAll('.chart-controls button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const range = btn.getAttribute('data-range');
-      const filtered = filterChartData(chartData, range);
-      renderChart(filtered);
-    });
-  });
-}
-
-// --- Bootstrap ---
 async function refreshDashboard() {
   try {
-    const [trades, chartData] = await Promise.all([
-      fetchJSON(TRADES_URL),
-      fetchJSON(CHART_URL),
+    const [summary, trades, history, equityData] = await Promise.all([
+      fetchJSON("/summary"),
+      fetchJSON("/trades"),
+      fetchJSON("/history"),
+      fetchJSON("/equity_chart")
     ]);
 
-    const openTrades = trades.filter(t => t.price_closed === "-" || t.pnl === "-");
-    const closedTrades = trades.filter(t => t.price_closed !== "-" && t.pnl !== "-");
-
-    renderTrades(openTrades, true);
-    renderTrades(closedTrades, false);
-
-    renderChart(chartData.reverse()); // chronological order
-    setupChartControls(chartData);
-  } catch (e) {
-    console.error('Dashboard error:', e);
+    updateSummary(summary);
+    updateTrades(trades);
+    updateHistory(history);
+    renderEquityChart(equityData);
+  } catch (err) {
+    console.error("Dashboard error:", err);
   }
 }
 
-refreshDashboard();
-setInterval(refreshDashboard, 15_000); // 15 sec refresh
+window.onload = refreshDashboard;
