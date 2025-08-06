@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>MT5 Bot Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
@@ -15,11 +14,11 @@
   <section id="account">
     <h2>Account Summary</h2>
     <div id="account-data">
-      <p><strong>Balance:</strong> <span id="balance">-</span></p>
-      <p><strong>Equity:</strong> <span id="equity">-</span></p>
-      <p><strong>Unrealized PnL:</strong> <span id="unrealized_pnl">-</span></p>
-      <p><strong>Free Margin:</strong> <span id="margin_free">-</span></p>
-      <p><strong>Used Margin:</strong> <span id="margin">-</span></p>
+      <p><strong>Balance:</strong> <span id="balance">–</span></p>
+      <p><strong>Equity:</strong> <span id="equity">–</span></p>
+      <p><strong>Unrealized PnL:</strong> <span id="unrealized_pnl">–</span></p>
+      <p><strong>Free Margin:</strong> <span id="margin_free">–</span></p>
+      <p><strong>Used Margin:</strong> <span id="margin">–</span></p>
     </div>
   </section>
 
@@ -28,30 +27,19 @@
     <table id="trades-table">
       <thead>
         <tr>
-          <th>Symbol</th>
-          <th>Type</th>
-          <th>Volume</th>
-          <th>Open Price</th>
-          <th>Current Price</th>
-          <th>Open Time</th>
-          <th>Duration</th>
-          <th>Profit (USD)</th>
-          <th>Profit (%)</th>
+          <th data-sort="symbol">Symbol</th>
+          <th data-sort="type">Type</th>
+          <th data-sort="volume">Volume</th>
+          <th data-sort="open_price">Open Price</th>
+          <th data-sort="close_price">Current Price</th>
+          <th data-sort="open_time">Open Time</th>
+          <th data-sort="duration">Duration</th>
+          <th data-sort="profit_usd">Profit (USD)</th>
+          <th data-sort="profit_pct">Profit (%)</th>
         </tr>
       </thead>
-      <tbody id="trades"></tbody>
+      <tbody id="trades-body"></tbody>
     </table>
-  </section>
-
-  <section id="chart">
-    <h2>Equity & Balance Chart</h2>
-    <div class="chart-controls">
-      <button data-range="all">All Time</button>
-      <button data-range="7d">7 Days</button>
-      <button data-range="1d">1 Day</button>
-      <button data-range="1h">1 Hour</button>
-    </div>
-    <canvas id="equityChart" width="800" height="400"></canvas>
   </section>
 
   <section id="history">
@@ -59,18 +47,18 @@
     <table id="history-table">
       <thead>
         <tr>
-          <th>Symbol</th>
-          <th>Type</th>
-          <th>Volume</th>
-          <th>Open Price</th>
-          <th>Close Price</th>
-          <th>Open Time</th>
-          <th>Close Time</th>
-          <th>Duration</th>
-          <th>Profit (USD)</th>
+          <th data-sort="symbol">Symbol</th>
+          <th data-sort="type">Type</th>
+          <th data-sort="volume">Volume</th>
+          <th data-sort="open_price">Open Price</th>
+          <th data-sort="close_price">Close Price</th>
+          <th data-sort="open_time">Open Time</th>
+          <th data-sort="close_time">Close Time</th>
+          <th data-sort="duration">Duration</th>
+          <th data-sort="profit_usd">Profit (USD)</th>
         </tr>
       </thead>
-      <tbody id="history"></tbody>
+      <tbody id="history-body"></tbody>
     </table>
   </section>
 
