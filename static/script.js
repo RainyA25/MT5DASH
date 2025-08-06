@@ -1,150 +1,127 @@
 const API_BASE = "https://mt5bot.tilinshop.com";
 
-let fullEquityData = [];
-
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
-  return await res.json();
+async function fetchJSON(endpoint) {
+  const res = await fetch(API_BASE + endpoint);
+  if (!res.ok) throw new Error(`Failed to fetch ${endpoint}`);
+  return res.json();
 }
 
-function formatCurrency(value) {
-  return `$${parseFloat(value).toFixed(2)}`;
+function formatCurrency(val) {
+  return `$${parseFloat(val).toFixed(2)}`;
 }
 
-function colorize(value) {
-  return `<span style="color:${value < 0 ? 'red' : 'lightgreen'}">${value}</span>`;
+function colorize(val) {
+  // val might end with '%' or be numeric
+  const num = parseFloat(val);
+  const cls = num > 0 ? "text-green" : num < 0 ? "text-red" : "";
+  return `<span class="${cls}">${val}</span>`;
 }
 
+// Load Account Summary
 async function loadSummary() {
-  const data = await fetchJSON(`${API_BASE}/summary`);
-  document.getElementById("balance").innerHTML = formatCurrency(data.balance);
-  document.getElementById("equity").innerHTML = formatCurrency(data.equity);
-  document.getElementById("unrealized_pnl").innerHTML = colorize(data.unrealized_pct.toFixed(2) + "%");
-  document.getElementById("margin_free").innerHTML = formatCurrency(data.margin_free);
-  document.getElementById("margin").innerHTML = formatCurrency(data.margin);
+  const d = await fetchJSON("/summary");
+  document.getElementById("balance").textContent      = formatCurrency(d.balance);
+  document.getElementById("equity").textContent       = formatCurrency(d.equity);
+  document.getElementById("unrealized_pnl").innerHTML = colorize(d.unrealized_pct.toFixed(2) + "%");
+  document.getElementById("margin_free").textContent  = formatCurrency(d.margin_free);
+  document.getElementById("margin").textContent       = formatCurrency(d.margin);
 }
 
+// Load Open Trades
 async function loadTrades() {
-  const trades = await fetchJSON(`${API_BASE}/trades`);
-  const tbody = document.getElementById("trades");
+  const trades = await fetchJSON("/trades");
+  const tbody = document.getElementById("trades-body");
   tbody.innerHTML = "";
-
   trades.forEach(t => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
+    const r = document.createElement("tr");
+    r.innerHTML = `
       <td>${t.symbol}</td>
-      <td>${t.open_price > t.close_price ? "Sell" : "Buy"}</td>
+      <td>${t.type}</td>
       <td>${t.volume}</td>
-      <td>${t.open_price}</td>
-      <td>${t.close_price}</td>
+      <td>${formatCurrency(t.open_price)}</td>
+      <td>${formatCurrency(t.close_price)}</td>
       <td>${t.open_time}</td>
       <td>${t.duration}</td>
-      <td>${colorize(t.profit_usd)}</td>
-      <td>${colorize(t.profit_pct + "%")}</td>
+      <td>${colorize(t.profit_usd.toFixed(2))}</td>
+      <td>${colorize(t.profit_pct.toFixed(2) + "%")}</td>
     `;
-    tbody.appendChild(row);
+    tbody.appendChild(r);
   });
 }
 
+// Load Trade History
 async function loadHistory() {
-  const history = await fetchJSON(`${API_BASE}/history`);
-  const tbody = document.getElementById("history");
+  const history = await fetchJSON("/history");
+  const tbody = document.getElementById("history-body");
   tbody.innerHTML = "";
-
   history.forEach(t => {
-    const type = t.open_price > t.close_price ? "Sell" : "Buy";
-    const row = document.createElement("tr");
-    row.innerHTML = `
+    const r = document.createElement("tr");
+    r.innerHTML = `
       <td>${t.symbol}</td>
-      <td>${type}</td>
+      <td>${t.entry_type}</td>
       <td>${t.volume}</td>
-      <td>${t.open_price}</td>
-      <td>${t.close_price}</td>
+      <td>${formatCurrency(t.open_price)}</td>
+      <td>${formatCurrency(t.close_price)}</td>
       <td>${t.open_time}</td>
       <td>${t.close_time}</td>
       <td>${t.duration}</td>
-      <td>${colorize(t.profit_usd)}</td>
+      <td>${colorize(t.profit_usd.toFixed(2))}</td>
     `;
-    tbody.appendChild(row);
+    tbody.appendChild(r);
   });
 }
 
-function renderEquityChart(data) {
-  const ctx = document.getElementById("equityChart").getContext("2d");
-  const labels = data.map(d => d.timestamp);
-  const pnl = data.map(d => d.daily_pnl);
-
-  if (window.equityChart instanceof Chart) {
-    window.equityChart.destroy();
-  }
-
-  window.equityChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Daily PnL ($)",
-        data: pnl,
-        borderColor: "rgba(0, 200, 255, 0.9)",
-        backgroundColor: "rgba(0, 200, 255, 0.2)",
-        tension: 0.3,
-        pointRadius: 3
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          labels: { color: "#ccc" }
-        }
-      },
-      scales: {
-        x: { ticks: { color: "#ccc" }},
-        y: { ticks: { color: "#ccc" }, beginAtZero: false }
-      }
+// Table Sorting
+let sortDirections = {};
+function sortTable(bodyId, colIndex, type, asc) {
+  const tbody = document.getElementById(bodyId);
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+  rows.sort((a, b) => {
+    let aVal = a.children[colIndex].textContent.replace(/[$,%]/g, "");
+    let bVal = b.children[colIndex].textContent.replace(/[$,%]/g, "");
+    if (type === "number") {
+      return asc ? aVal - bVal : bVal - aVal;
     }
+    if (type === "date") {
+      return asc ? new Date(aVal) - new Date(bVal) : new Date(bVal) - new Date(aVal);
+    }
+    return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
   });
+  tbody.innerHTML = "";
+  rows.forEach(r => tbody.appendChild(r));
 }
 
-function filterChart(range) {
-  const now = new Date();
-  let cutoff;
+function setupSorting() {
+  document.querySelectorAll("th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const field   = th.getAttribute("data-sort");
+      const table   = th.closest("table");
+      const bodyId  = table.id === "trades-table" ? "trades-body" : "history-body";
+      const headers = Array.from(th.parentElement.children);
+      const colIdx  = headers.indexOf(th);
 
-  if (range === "1h") cutoff = new Date(now.getTime() - 1 * 60 * 60 * 1000);
-  else if (range === "1d") cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  else if (range === "7d") cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  else cutoff = new Date(0); // All time
+      let type = "string";
+      if (field.includes("time")) type = "date";
+      else if (["volume","open_price","close_price","profit_usd","profit_pct"].includes(field)) type = "number";
 
-  const filtered = fullEquityData.filter(d => new Date(d.timestamp) >= cutoff);
-  renderEquityChart(filtered);
-}
-
-async function loadEquityChart() {
-  fullEquityData = await fetchJSON(`${API_BASE}/equity_chart`);
-  renderEquityChart(fullEquityData);
-}
-
-function attachChartFilters() {
-  document.querySelectorAll(".chart-controls button").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const range = btn.dataset.range;
-      filterChart(range);
+      const key = `${bodyId}-${field}`;
+      const asc = sortDirections[key] = !sortDirections[key];
+      sortTable(bodyId, colIdx, type, asc);
     });
   });
 }
 
+// Refresh Dashboard
 async function refreshDashboard() {
   try {
     await loadSummary();
     await loadTrades();
     await loadHistory();
-    await loadEquityChart();
-    attachChartFilters();
-  } catch (err) {
-    console.error("Dashboard error:", err);
+    setupSorting();
+  } catch (e) {
+    console.error("Dashboard error:", e);
   }
 }
 
 refreshDashboard();
-setInterval(refreshDashboard, 60000); // refresh every minute
+setInterval(refreshDashboard, 10000);
